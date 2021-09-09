@@ -5,9 +5,11 @@ from sklearn.feature_extraction.text import CountVectorizer
 from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score
 import joblib
+import time
+import os
 
 #Read data
-data = pd.read_csv('clean_data.csv')
+data = pd.read_csv(os.path.dirname(os.path.realpath(__file__)) + '\\clean_data.csv')
 
 #Process data
 texts = data['text'].astype(str)
@@ -16,15 +18,17 @@ vectorizer = CountVectorizer(min_df=0.0001)
 X = vectorizer.fit_transform(texts)
 
 #Split data
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.01)
 print (X_train.shape, y_train.shape)
 print (X_test.shape, y_test.shape)
 
 #Train
+pretime = time.time()
 print("Training...")
-model = XGBClassifier()
-model.fit(X_train, y_train)
+model = XGBClassifier(n_estimators=2000, learning_rate=0.3, tree_method="hist", objective="reg:squarederror")
+model.fit(X, y, eval_set=[(X_test, y_test)], eval_metric=["error"])
 print("Done.")
+print(f"Trained in {(time.time() - pretime)}s")
 
 #Test
 preds = model.predict(X_test)
@@ -38,6 +42,7 @@ print("Accuracy: %.2f%%" % (accuracy * 100.0))
 joblib.dump(vectorizer, 'vectorizer.joblib')
 joblib.dump(model, 'model.joblib')
 
+#vzhou's code
 '''
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
